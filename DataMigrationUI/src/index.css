@@ -1,0 +1,815 @@
+/* =========================================
+   GLOBAL
+   ========================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    margin: 0;
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f6f8;
+    color: #1f2937;
+}
+
+button,
+input,
+textarea {
+    font-family: inherit;
+}
+
+
+/* =========================================
+   LOGIN PAGE
+   ========================================= */
+
+.login-page {
+    min-height: 100vh;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+}
+
+.login-card {
+    width: 400px;
+
+    padding: 40px;
+
+    background: white;
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.login-card h1 {
+    margin: 0;
+
+    font-size: 30px;
+
+    color: #111827;
+}
+
+.login-subtitle {
+    color: #6b7280;
+
+    margin-top: 8px;
+
+    margin-bottom: 30px;
+}
+
+
+/* =========================================
+   FORMS
+   ========================================= */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+
+    font-weight: 600;
+
+    margin-bottom: 8px;
+
+    color: #374151;
+}
+
+input[type="text"],
+input[type="password"],
+textarea {
+    width: 100%;
+
+    padding: 12px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 6px;
+
+    font-size: 14px;
+
+    color: #1f2937;
+
+    background: white;
+
+    outline: none;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+textarea {
+    resize: vertical;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================
+   BUTTONS
+   ========================================= */
+
+.primary-button,
+.secondary-button {
+    padding: 11px 20px;
+
+    border-radius: 6px;
+
+    border: none;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+.primary-button {
+    background: #2563eb;
+
+    color: white;
+}
+
+.primary-button:hover {
+    background: #1d4ed8;
+}
+
+.primary-button:disabled {
+    background: #9ca3af;
+
+    cursor: not-allowed;
+
+    opacity: 0.7;
+}
+
+.secondary-button {
+    background: #e5e7eb;
+
+    color: #374151;
+}
+
+.secondary-button:hover {
+    background: #d1d5db;
+}
+
+.secondary-button:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}
+
+
+/* =========================================
+   GENERAL PAGE
+   ========================================= */
+
+.page {
+    max-width: 1100px;
+
+    margin: 0 auto;
+
+    padding: 40px 24px;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    margin: 0 0 8px;
+
+    font-size: 28px;
+
+    color: #111827;
+}
+
+.page-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 16px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================
+   COMMON CARDS
+   ========================================= */
+
+.migration-card,
+.summary-card,
+.entities-card {
+    background: white;
+
+    padding: 25px;
+
+    border-radius: 10px;
+
+    margin-bottom: 25px;
+
+    box-shadow:
+        0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.migration-card h2,
+.summary-card h2,
+.entities-card h2 {
+    margin-top: 0;
+
+    color: #111827;
+}
+
+.migration-card p,
+.summary-card p,
+.entities-card p {
+    color: #6b7280;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================
+   MIGRATION PAGE
+   ========================================= */
+
+.migration-card textarea {
+    margin: 20px 0;
+}
+
+.button-container {
+    display: flex;
+
+    justify-content: flex-end;
+}
+
+
+/* =========================================
+   ERROR MESSAGE
+   ========================================= */
+
+.error-message {
+    background: #fee2e2;
+
+    color: #b91c1c;
+
+    padding: 12px 15px;
+
+    border-radius: 6px;
+
+    margin-bottom: 20px;
+
+    border: 1px solid #fecaca;
+
+    font-size: 14px;
+}
+
+
+/* =========================================
+   SUMMARY
+   ========================================= */
+
+.summary-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 20px;
+}
+
+.summary-grid div {
+    padding: 20px;
+
+    background: #f8fafc;
+
+    border-radius: 8px;
+
+    border: 1px solid #eef2f7;
+}
+
+.summary-grid span {
+    display: block;
+
+    color: #6b7280;
+
+    font-size: 13px;
+
+    margin-bottom: 8px;
+}
+
+.summary-grid strong {
+    font-size: 24px;
+
+    color: #111827;
+}
+
+
+/* =========================================
+   ENTITY SELECTION
+   ========================================= */
+
+.entities-header {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 20px;
+}
+
+.entities-header h2 {
+    margin-bottom: 5px;
+}
+
+.entities-header p {
+    margin-top: 5px;
+}
+
+.entity-list {
+    margin-top: 20px;
+}
+
+.entity-row {
+    display: flex;
+
+    gap: 15px;
+
+    align-items: flex-start;
+
+    padding: 18px 5px;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    cursor: pointer;
+}
+
+.entity-row:last-child {
+    border-bottom: none;
+}
+
+.entity-row:hover {
+    background: #f8fafc;
+}
+
+.entity-row input {
+    margin-top: 4px;
+
+    cursor: pointer;
+}
+
+.entity-row strong {
+    font-size: 16px;
+
+    color: #111827;
+}
+
+.entity-row p {
+    margin: 5px 0 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+
+/* =========================================
+   SELECTED ENTITY BADGES
+   ========================================= */
+
+.selected-entity-list {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    margin-top: 15px;
+}
+
+.entity-badge {
+    display: inline-block;
+
+    padding: 8px 14px;
+
+    background: #eff6ff;
+
+    color: #1d4ed8;
+
+    border-radius: 20px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    border: 1px solid #dbeafe;
+}
+
+
+/* =========================================
+   SELECTION FOOTER
+   ========================================= */
+
+.selection-footer {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-top: 25px;
+
+    padding-top: 20px;
+
+    border-top: 1px solid #e5e7eb;
+}
+
+
+/* =========================================
+   MIGRATION MAPPINGS PAGE
+   ========================================= */
+
+.migration-mappings-page {
+    max-width: 1200px;
+
+    padding-bottom: 110px;
+}
+
+
+/* =========================================
+   MAPPINGS HEADER
+   ========================================= */
+
+.migration-mappings-header {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    margin-bottom: 30px;
+
+    gap: 20px;
+}
+
+.migration-mappings-header h1 {
+    margin: 0 0 8px;
+
+    font-size: 28px;
+
+    color: #111827;
+}
+
+.migration-mappings-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 16px;
+}
+
+
+/* =========================================
+   MAPPING LIST
+   ========================================= */
+
+.migration-mappings-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 25px;
+}
+
+
+/* =========================================
+   ENTITY MAPPING CARD
+   ========================================= */
+
+.migration-entity-card {
+    background: white;
+
+    padding: 22px;
+
+    border-radius: 10px;
+
+    border: 1px solid #e5e7eb;
+
+    box-shadow:
+        0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.migration-entity-card h2 {
+    margin: 0 0 18px;
+
+    font-size: 20px;
+
+    color: #111827;
+}
+
+
+/* =========================================
+   MAPPING TABLE CONTAINER
+   ========================================= */
+
+.migration-table-container {
+    width: 100%;
+
+    overflow-x: auto;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 8px;
+}
+
+
+/* =========================================
+   MAPPING TABLE
+   ========================================= */
+
+table.migration-mapping-table {
+    width: 100%;
+
+    margin: 0;
+
+    padding: 0;
+
+    border-collapse: collapse;
+
+    border-spacing: 0;
+
+    table-layout: fixed;
+
+    background: white;
+}
+
+
+/* =========================================
+   TABLE HEADER
+   ========================================= */
+
+table.migration-mapping-table thead {
+    background: #f1f5f9;
+}
+
+table.migration-mapping-table th {
+    padding: 14px 16px;
+
+    text-align: left;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    color: #1f2937;
+
+    border-bottom: 1px solid #d1d5db;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================
+   COLUMN WIDTHS
+   ========================================= */
+
+table.migration-mapping-table th:nth-child(1),
+table.migration-mapping-table td:nth-child(1) {
+    width: 22%;
+}
+
+table.migration-mapping-table th:nth-child(2),
+table.migration-mapping-table td:nth-child(2) {
+    width: 25%;
+}
+
+table.migration-mapping-table th:nth-child(3),
+table.migration-mapping-table td:nth-child(3) {
+    width: 22%;
+}
+
+table.migration-mapping-table th:nth-child(4),
+table.migration-mapping-table td:nth-child(4) {
+    width: 25%;
+}
+
+table.migration-mapping-table th:nth-child(5),
+table.migration-mapping-table td:nth-child(5) {
+    width: 6%;
+}
+
+
+/* =========================================
+   TABLE BODY
+   ========================================= */
+
+table.migration-mapping-table td {
+    padding: 15px 16px;
+
+    font-size: 14px;
+
+    color: #374151;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    vertical-align: middle;
+
+    word-break: break-word;
+}
+
+
+/* =========================================
+   LAST TABLE ROW
+   ========================================= */
+
+table.migration-mapping-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* =========================================
+   TABLE HOVER
+   ========================================= */
+
+table.migration-mapping-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+
+/* =========================================
+   SELECTED MAPPING
+   ========================================= */
+
+table.migration-mapping-table tbody tr.migration-mapping-selected {
+    background: #eff6ff;
+}
+
+table.migration-mapping-table tbody tr.migration-mapping-selected:hover {
+    background: #dbeafe;
+}
+
+
+/* =========================================
+   SELECT COLUMN
+   ========================================= */
+
+.migration-select-header {
+    text-align: center !important;
+}
+
+.migration-select-cell {
+    text-align: center;
+
+    vertical-align: middle;
+}
+
+.migration-select-cell input[type="checkbox"] {
+    width: 17px;
+
+    height: 17px;
+
+    margin: 0;
+
+    cursor: pointer;
+
+    accent-color: #2563eb;
+}
+
+
+/* =========================================
+   EMPTY MAPPINGS
+   ========================================= */
+
+.empty-mappings-message {
+    background: white;
+
+    padding: 30px;
+
+    border-radius: 10px;
+
+    border: 1px solid #e5e7eb;
+
+    color: #6b7280;
+
+    box-shadow:
+        0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+
+/* =========================================
+   MAPPING BOTTOM FOOTER
+   ========================================= */
+
+.migration-mappings-footer {
+    position: fixed;
+
+    left: 0;
+
+    right: 0;
+
+    bottom: 0;
+
+    height: 75px;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 0 40px;
+
+    background: white;
+
+    border-top: 1px solid #d1d5db;
+
+    box-shadow:
+        0 -3px 15px rgba(0, 0, 0, 0.08);
+
+    z-index: 100;
+}
+
+.migration-mappings-footer span {
+    font-size: 15px;
+
+    font-weight: 600;
+
+    color: #1f2937;
+}
+
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 900px) {
+
+    .summary-grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .page {
+        padding: 25px 15px;
+    }
+
+    .entities-header,
+    .migration-mappings-header {
+        flex-direction: column;
+    }
+
+    .migration-table-container {
+        overflow-x: auto;
+    }
+
+    table.migration-mapping-table {
+        min-width: 850px;
+    }
+
+    .migration-mappings-footer {
+        padding: 0 20px;
+    }
+
+}
+
+@media (max-width: 500px) {
+
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .login-card {
+        width: 100%;
+
+        padding: 30px 25px;
+    }
+
+}
