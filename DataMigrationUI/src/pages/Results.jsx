@@ -1,134 +1,416 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 function Results() {
 
     const navigate = useNavigate();
+    const location = useLocation();
 
-    const entities = [
-        {
-            name: "Customer",
-            description: "Customer master information"
-        },
-        {
-            name: "Order",
-            description: "Customer order information"
-        },
-        {
-            name: "Product",
-            description: "Product catalog information"
-        },
-        {
-            name: "Address",
-            description: "Customer address information"
-        }
-    ];
+    /*
+     * Get the complete response from Migration.jsx
+     */
+    const analysisResult =
+        location.state?.analysisResult;
 
-    const [selectedEntities, setSelectedEntities] = useState([]);
+    const sourceSchema =
+        location.state?.sourceSchema || "";
 
-    const toggleEntity = (entityName) => {
+    const [selectedEntities, setSelectedEntities] =
+        useState([]);
 
-        setSelectedEntities((current) => {
+    /*
+     * --------------------------------------------------
+     * Parse API response
+     * --------------------------------------------------
+     *
+     * API response:
+     *
+     * {
+     *   statusCode: 200,
+     *   headers: {...},
+     *   body: "{...}",
+     *   isBase64Encoded: false
+     * }
+     *
+     * The actual analysis JSON is inside "body".
+     */
 
-            if (current.includes(entityName)) {
+    let parsedResult = null;
 
-                return current.filter(
-                    (name) => name !== entityName
-                );
+    if (analysisResult) {
+
+        try {
+
+            if (
+                typeof analysisResult.body ===
+                "string"
+            ) {
+
+                parsedResult =
+                    JSON.parse(
+                        analysisResult.body
+                    );
+
+            } else {
+
+                parsedResult =
+                    analysisResult.body ||
+                    analysisResult;
 
             }
 
-            return [...current, entityName];
+            console.log(
+                "Parsed Schema Analysis Result:",
+                parsedResult
+            );
 
-        });
+        } catch (error) {
+
+            console.error(
+                "Failed to parse Schema Analysis response:",
+                error
+            );
+
+        }
+    }
+
+    /*
+     * --------------------------------------------------
+     * Analysis Summary
+     * --------------------------------------------------
+     */
+
+    const analysisSummary =
+        parsedResult?.analysis_summary || {};
+
+    /*
+     * --------------------------------------------------
+     * Entities
+     * --------------------------------------------------
+     */
+
+    const apiEntities =
+        Array.isArray(
+            parsedResult?.entities
+        )
+            ? parsedResult.entities
+            : [];
+
+    /*
+     * Convert API entities into UI entities
+     */
+    const entities =
+        apiEntities.map(
+            (entity) => ({
+                name:
+                    entity.entity_name,
+
+                description:
+                    entity.description,
+
+                schemaName:
+                    entity.schema_name,
+
+                tableName:
+                    entity.table_name,
+
+                category:
+                    entity.category,
+
+                migrationRecommendation:
+                    entity.migration_recommendation,
+
+                confidence:
+                    entity.confidence,
+
+                reason:
+                    entity.reason,
+
+                columns:
+                    entity.columns,
+
+                /*
+                 * Keep original API object.
+                 * This will be passed to
+                 * Schema Comparison.
+                 */
+                originalData:
+                    entity
+            })
+        );
+
+    /*
+     * --------------------------------------------------
+     * Recommended count
+     * --------------------------------------------------
+     */
+
+    const recommendedCount =
+        entities.filter(
+            (entity) =>
+                entity.migrationRecommendation ===
+                "RECOMMENDED"
+        ).length;
+
+    /*
+     * --------------------------------------------------
+     * Select Entity
+     * --------------------------------------------------
+     */
+
+    const toggleEntity = (entityName) => {
+
+        setSelectedEntities(
+            (current) => {
+
+                if (
+                    current.includes(
+                        entityName
+                    )
+                ) {
+
+                    return current.filter(
+                        (name) =>
+                            name !== entityName
+                    );
+                }
+
+                return [
+                    ...current,
+                    entityName
+                ];
+            }
+        );
     };
+
+    /*
+     * --------------------------------------------------
+     * Select All
+     * --------------------------------------------------
+     */
 
     const selectAll = () => {
 
-        if (selectedEntities.length === entities.length) {
+        if (
+            selectedEntities.length ===
+            entities.length
+        ) {
 
             setSelectedEntities([]);
 
         } else {
 
             setSelectedEntities(
-                entities.map((entity) => entity.name)
+                entities.map(
+                    (entity) =>
+                        entity.name
+                )
             );
-
         }
     };
+
+    /*
+     * --------------------------------------------------
+     * Continue
+     * --------------------------------------------------
+     */
 
     const handleContinue = () => {
 
-        if (selectedEntities.length === 0) {
+        if (
+            selectedEntities.length === 0
+        ) {
             return;
         }
 
-        navigate("/schema-comparison", {
-            state: {
-                selectedEntities
+        /*
+         * Get complete entity objects
+         * selected by the user.
+         */
+        const selectedEntityObjects =
+            entities
+                .filter(
+                    (entity) =>
+                        selectedEntities.includes(
+                            entity.name
+                        )
+                )
+                .map(
+                    (entity) =>
+                        entity.originalData
+                );
+
+        console.log(
+            "Selected Entities:",
+            selectedEntities
+        );
+
+        console.log(
+            "Selected Entity Objects:",
+            selectedEntityObjects
+        );
+
+        navigate(
+            "/schema-comparison",
+            {
+                state: {
+
+                    selectedEntities:
+
+                        selectedEntities,
+
+                    selectedEntityObjects:
+
+                        selectedEntityObjects,
+
+                    analysisResult:
+
+                        analysisResult,
+
+                    sourceSchema:
+
+                        sourceSchema
+                }
             }
-        });
+        );
     };
+
+    /*
+     * --------------------------------------------------
+     * No result
+     * --------------------------------------------------
+     */
+
+    if (!analysisResult) {
+
+        return (
+            <div className="page">
+
+                <div className="page-header">
+
+                    <h1>
+                        Schema Analysis Result
+                    </h1>
+
+                    <p>
+                        No schema analysis result
+                        was found.
+                    </p>
+
+                </div>
+
+                <div className="entities-card">
+
+                    <p>
+                        Please go back and initiate
+                        the migration again.
+                    </p>
+
+                    <button
+                        className="primary-button"
+                        onClick={() =>
+                            navigate("/")
+                        }
+                    >
+                        Back
+                    </button>
+
+                </div>
+
+            </div>
+        );
+    }
+
+    /*
+     * --------------------------------------------------
+     * Page
+     * --------------------------------------------------
+     */
 
     return (
         <div className="page">
 
             <div className="page-header">
 
-                <h1>Schema Analysis Result</h1>
+                <h1>
+                    Schema Analysis Result
+                </h1>
 
                 <p>
-                    Review the entities identified from
-                    the source schema.
+                    Review the entities identified
+                    from the source schema.
                 </p>
 
             </div>
 
             <div className="summary-card">
 
-                <h2>Analysis Summary</h2>
+                <h2>
+                    Analysis Summary
+                </h2>
 
                 <div className="summary-grid">
 
                     <div>
+
                         <span>
                             Tables Analyzed
                         </span>
 
                         <strong>
-                            4
+                            {
+                                analysisSummary
+                                    .total_tables_analyzed
+                                ?? 0
+                            }
                         </strong>
+
                     </div>
 
                     <div>
+
                         <span>
                             Entities Identified
                         </span>
 
                         <strong>
-                            {entities.length}
+                            {
+                                analysisSummary
+                                    .business_entities_identified
+                                ?? entities.length
+                            }
                         </strong>
+
                     </div>
 
                     <div>
+
                         <span>
                             Recommended
                         </span>
 
                         <strong>
-                            3
+                            {
+                                analysisSummary
+                                    .recommended_entities
+                                ?? recommendedCount
+                            }
                         </strong>
+
                     </div>
 
                     <div>
+
                         <span>
                             Selected
                         </span>
 
                         <strong>
-                            {selectedEntities.length}
+                            {
+                                selectedEntities.length
+                            }
                         </strong>
+
                     </div>
 
                 </div>
@@ -146,72 +428,111 @@ function Results() {
                         </h2>
 
                         <p>
-                            Choose the entities you want
-                            to migrate.
+                            Choose the entities you
+                            want to migrate.
                         </p>
 
                     </div>
 
-                    <button
-                        className="secondary-button"
-                        onClick={selectAll}
-                    >
-                        {selectedEntities.length === entities.length
-                            ? "Deselect All"
-                            : "Select All"}
-                    </button>
+                    {entities.length > 0 && (
+
+                        <button
+                            className="secondary-button"
+                            onClick={selectAll}
+                        >
+
+                            {
+                                selectedEntities.length ===
+                                entities.length
+
+                                    ? "Deselect All"
+
+                                    : "Select All"
+                            }
+
+                        </button>
+
+                    )}
 
                 </div>
 
                 <div className="entity-list">
 
-                    {entities.map((entity) => (
+                    {entities.length === 0 ? (
 
-                        <label
-                            className="entity-row"
-                            key={entity.name}
-                        >
+                        <div className="error-message">
 
-                            <input
-                                type="checkbox"
-                                checked={selectedEntities.includes(
-                                    entity.name
-                                )}
-                                onChange={() =>
-                                    toggleEntity(entity.name)
-                                }
-                            />
+                            No entities were returned
+                            by the Schema Analysis API.
 
-                            <div>
+                        </div>
 
-                                <strong>
-                                    {entity.name}
-                                </strong>
+                    ) : (
 
-                                <p>
-                                    {entity.description}
-                                </p>
+                        entities.map(
+                            (entity) => (
 
-                            </div>
+                                <label
+                                    className="entity-row"
+                                    key={entity.name}
+                                >
 
-                        </label>
+                                    <input
+                                        type="checkbox"
+                                        checked={
+                                            selectedEntities.includes(
+                                                entity.name
+                                            )
+                                        }
+                                        onChange={() =>
+                                            toggleEntity(
+                                                entity.name
+                                            )
+                                        }
+                                    />
 
-                    ))}
+                                    <div>
+
+                                        <strong>
+                                            {
+                                                entity.name
+                                            }
+                                        </strong>
+
+                                        <p>
+                                            {
+                                                entity.description
+                                            }
+                                        </p>
+
+                                    </div>
+
+                                </label>
+                            )
+                        )
+
+                    )}
 
                 </div>
 
                 <div className="selection-footer">
 
                     <span>
-                        {selectedEntities.length} entities selected
+                        {
+                            selectedEntities.length
+                        }{" "}
+                        entities selected
                     </span>
 
                     <button
                         className="primary-button"
                         disabled={
-                            selectedEntities.length === 0
+                            selectedEntities.length ===
+                            0
                         }
-                        onClick={handleContinue}
+                        onClick={
+                            handleContinue
+                        }
                     >
                         Continue
                     </button>

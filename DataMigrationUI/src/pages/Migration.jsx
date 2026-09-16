@@ -6,14 +6,13 @@ function Migration() {
     const navigate = useNavigate();
 
     const [sourceSchema, setSourceSchema] = useState("");
-
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
     const handleInitiateMigration = async () => {
 
         if (!sourceSchema.trim()) {
-            setError("Please enter the source schema.");
+            setError("Please enter the source database schema.");
             return;
         }
 
@@ -22,8 +21,13 @@ function Migration() {
 
         try {
 
+            /*
+             * IMPORTANT:
+             * The Schema Analysis API expects "Schema"
+             * as the request property.
+             */
             const requestBody = {
-                SourceSchema: sourceSchema
+                Schema: sourceSchema.trim()
             };
 
             console.log(
@@ -44,14 +48,6 @@ function Migration() {
                 }
             );
 
-            if (!response.ok) {
-
-                throw new Error(
-                    `Schema analysis failed: ${response.status}`
-                );
-
-            }
-
             const result = await response.json();
 
             console.log(
@@ -60,15 +56,64 @@ function Migration() {
             );
 
             /*
-             * Pass the real API response
-             * to the Results page.
+             * Handle HTTP/API errors
              */
+            if (!response.ok) {
 
-            navigate("/results", {
-                state: {
-                    analysisResult: result
+                let errorMessage =
+                    "Schema analysis failed.";
+
+                /*
+                 * Lambda response may contain
+                 * the actual error inside body.
+                 */
+                if (result?.body) {
+
+                    try {
+
+                        const errorBody =
+                            typeof result.body === "string"
+                                ? JSON.parse(result.body)
+                                : result.body;
+
+                        if (errorBody?.error) {
+                            errorMessage =
+                                errorBody.error;
+                        }
+
+                    } catch (parseError) {
+
+                        console.error(
+                            "Error parsing API error body:",
+                            parseError
+                        );
+
+                    }
+
+                } else if (result?.error) {
+
+                    errorMessage =
+                        result.error;
                 }
-            });
+
+                throw new Error(
+                    errorMessage
+                );
+            }
+
+            /*
+             * Pass complete API response
+             * to Results page.
+             */
+            navigate(
+                "/results",
+                {
+                    state: {
+                        analysisResult: result,
+                        sourceSchema: sourceSchema
+                    }
+                }
+            );
 
         } catch (err) {
 
@@ -85,7 +130,6 @@ function Migration() {
         } finally {
 
             setLoading(false);
-
         }
     };
 
@@ -94,7 +138,9 @@ function Migration() {
 
             <div className="page-header">
 
-                <h1>Initiate Migration</h1>
+                <h1>
+                    Initiate Migration
+                </h1>
 
                 <p>
                     Start a new data migration by analyzing
@@ -105,7 +151,9 @@ function Migration() {
 
             <div className="migration-card">
 
-                <h2>Source Schema</h2>
+                <h2>
+                    Source Schema
+                </h2>
 
                 <p>
                     Provide the source database schema
@@ -117,23 +165,25 @@ function Migration() {
                     placeholder="Enter source database schema here..."
                     value={sourceSchema}
                     onChange={(event) =>
-                        setSourceSchema(event.target.value)
+                        setSourceSchema(
+                            event.target.value
+                        )
                     }
                 />
 
                 {error && (
-
                     <div className="error-message">
                         {error}
                     </div>
-
                 )}
 
                 <div className="button-container">
 
                     <button
                         className="primary-button"
-                        onClick={handleInitiateMigration}
+                        onClick={
+                            handleInitiateMigration
+                        }
                         disabled={loading}
                     >
 
