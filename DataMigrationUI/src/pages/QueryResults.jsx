@@ -17,6 +17,12 @@ function QueryResults() {
     const [migrationResults, setMigrationResults] =
         useState([]);
 
+    const [migrationStartTime, setMigrationStartTime] =
+        useState("");
+
+    const [migrationEndTime, setMigrationEndTime] =
+        useState("");
+
     const [error, setError] = useState("");
 
     // --------------------------------------------------
@@ -31,7 +37,7 @@ function QueryResults() {
     };
 
     // --------------------------------------------------
-    // Get Source Extraction Query
+    // Get Source Query
     // --------------------------------------------------
     const getSourceQuery = (result) => {
         return (
@@ -42,7 +48,7 @@ function QueryResults() {
     };
 
     // --------------------------------------------------
-    // Get Target Insertion Query
+    // Get Target Query
     // --------------------------------------------------
     const getTargetQuery = (result) => {
         return (
@@ -50,6 +56,17 @@ function QueryResults() {
             result.targetInsertionQuery ||
             ""
         );
+    };
+
+    // --------------------------------------------------
+    // Format Date / Time
+    // --------------------------------------------------
+    const formatDateTime = (date) => {
+        if (!date) {
+            return "";
+        }
+
+        return date.toLocaleString();
     };
 
     // --------------------------------------------------
@@ -69,14 +86,14 @@ function QueryResults() {
             ];
         });
 
-        // Clear previous migration status when
-        // selection changes
         setMigrationResults([]);
+        setMigrationStartTime("");
+        setMigrationEndTime("");
         setError("");
     };
 
     // --------------------------------------------------
-    // Select All / Unselect All
+    // Select All
     // --------------------------------------------------
     const handleSelectAll = () => {
         if (
@@ -93,6 +110,8 @@ function QueryResults() {
         }
 
         setMigrationResults([]);
+        setMigrationStartTime("");
+        setMigrationEndTime("");
         setError("");
     };
 
@@ -111,76 +130,170 @@ function QueryResults() {
         setLoading(true);
         setMigrationResults([]);
 
+        // ----------------------------------------------
+        // Migration Start Time
+        // ----------------------------------------------
+        const startTime = new Date();
+
+        setMigrationStartTime(
+            formatDateTime(startTime)
+        );
+
         const results = [];
 
-        // Process each selected entity separately
-        for (const entityName of selectedEntities) {
-            const queryResult =
-                queryResults.find(
-                    (result) =>
-                        getEntityName(result) ===
-                        entityName
-                );
+        try {
+            // Process one entity at a time
+            for (
+                const entityName of selectedEntities
+            ) {
+                const queryResult =
+                    queryResults.find(
+                        (result) =>
+                            getEntityName(
+                                result
+                            ) === entityName
+                    );
 
-            if (!queryResult) {
-                results.push({
-                    entity: entityName,
-                    success: false,
-                    message:
-                        "Query result not found."
-                });
+                // ------------------------------------------
+                // Query not found
+                // ------------------------------------------
+                if (!queryResult) {
+                    results.push({
+                        entity: entityName,
+                        success: false,
+                        message:
+                            "Migration failed.",
+                        error:
+                            "Migration query was not found.",
+                        extractedRows: 0,
+                        insertedRows: 0
+                    });
 
+                    setMigrationResults([
+                        ...results
+                    ]);
+
+                    continue;
+                }
+
+                try {
+                    console.log(
+                        `[Migration] Starting entity: ${entityName}`
+                    );
+
+                    // --------------------------------------
+                    // Call ETL Agent
+                    // --------------------------------------
+                    const etlResult =
+                        await runETL(
+                            getEntityName(
+                                queryResult
+                            ),
+                            getSourceQuery(
+                                queryResult
+                            ),
+                            getTargetQuery(
+                                queryResult
+                            )
+                        );
+
+                    console.log(
+                        `[Migration] Result for ${entityName}:`,
+                        etlResult
+                    );
+
+                    // --------------------------------------
+                    // Store actual ETL result
+                    // --------------------------------------
+                    results.push({
+                        entity:
+                            etlResult.entity ||
+                            entityName,
+
+                        success:
+                            etlResult.success ===
+                            true,
+
+                        message:
+                            etlResult.message ||
+                            (
+                                etlResult.success
+                                    ? "Migration completed successfully."
+                                    : "Migration failed."
+                            ),
+
+                        error:
+                            etlResult.error ||
+                            "",
+
+                        extractedRows:
+                            etlResult.extractedRows ??
+                            0,
+
+                        insertedRows:
+                            etlResult.insertedRows ??
+                            0,
+
+                        statusCode:
+                            etlResult.statusCode,
+
+                        totalEntities:
+                            etlResult.totalEntities,
+
+                        successfulEntities:
+                            etlResult.successfulEntities,
+
+                        failedEntities:
+                            etlResult.failedEntities
+                    });
+                } catch (err) {
+                    console.error(
+                        `[Migration] Exception for ${entityName}:`,
+                        err
+                    );
+
+                    results.push({
+                        entity: entityName,
+                        success: false,
+                        message:
+                            "Migration failed.",
+                        error:
+                            err.message ||
+                            "Unexpected error occurred while executing migration.",
+                        extractedRows: 0,
+                        insertedRows: 0
+                    });
+                }
+
+                // ------------------------------------------
+                // Update UI after every entity
+                // ------------------------------------------
                 setMigrationResults([
                     ...results
                 ]);
-
-                continue;
             }
+        } catch (err) {
+            console.error(
+                "[Migration] Migration execution error:",
+                err
+            );
 
-            try {
-                console.log(
-                    `Starting migration for ${entityName}`
-                );
+            setError(
+                err.message ||
+                    "Migration execution failed."
+            );
+        } finally {
+            // ----------------------------------------------
+            // Migration End Time
+            // ----------------------------------------------
+            const endTime = new Date();
 
-                await runETL(
-                    getEntityName(queryResult),
-                    getSourceQuery(queryResult),
-                    getTargetQuery(queryResult)
-                );
+            setMigrationEndTime(
+                formatDateTime(endTime)
+            );
 
-                console.log(
-                    `Migration successful for ${entityName}`
-                );
-
-                results.push({
-                    entity: entityName,
-                    success: true,
-                    message:
-                        "Migration completed successfully."
-                });
-            } catch (err) {
-                console.error(
-                    `Migration failed for ${entityName}:`,
-                    err
-                );
-
-                results.push({
-                    entity: entityName,
-                    success: false,
-                    message:
-                        err.message ||
-                        "Migration failed."
-                });
-            }
-
-            // Update UI after every entity
-            // so the user can see progress
-            setMigrationResults([
-                ...results
-            ]);
+            setLoading(false);
         }
-
-        setLoading(false);
     };
 
     // --------------------------------------------------
@@ -228,9 +341,10 @@ function QueryResults() {
                 padding: "40px 24px"
             }}
         >
-            {/* --------------------------------------------------
-                Page Header
-            -------------------------------------------------- */}
+            {/* ==================================================
+                PAGE HEADER
+            ================================================== */}
+
             <h1>Migration Queries</h1>
 
             <p
@@ -244,9 +358,10 @@ function QueryResults() {
                 select the entities you want to migrate.
             </p>
 
-            {/* --------------------------------------------------
-                Select All
-            -------------------------------------------------- */}
+            {/* ==================================================
+                SELECT ALL
+            ================================================== */}
+
             <div
                 style={{
                     display: "flex",
@@ -266,10 +381,7 @@ function QueryResults() {
                     disabled={loading}
                     style={{
                         width: "18px",
-                        height: "18px",
-                        cursor: loading
-                            ? "not-allowed"
-                            : "pointer"
+                        height: "18px"
                     }}
                 />
 
@@ -288,9 +400,10 @@ function QueryResults() {
                 </span>
             </div>
 
-            {/* --------------------------------------------------
-                Query Results
-            -------------------------------------------------- */}
+            {/* ==================================================
+                QUERY RESULTS
+            ================================================== */}
+
             {queryResults.map(
                 (result, index) => {
                     const entity =
@@ -322,9 +435,7 @@ function QueryResults() {
                                     "0 2px 6px rgba(0,0,0,0.05)"
                             }}
                         >
-                            {/* --------------------------------------------------
-                                Entity Header
-                            -------------------------------------------------- */}
+                            {/* Entity */}
                             <div
                                 style={{
                                     display: "flex",
@@ -348,10 +459,7 @@ function QueryResults() {
                                     }
                                     style={{
                                         width: "18px",
-                                        height: "18px",
-                                        cursor: loading
-                                            ? "not-allowed"
-                                            : "pointer"
+                                        height: "18px"
                                     }}
                                 />
 
@@ -385,21 +493,14 @@ function QueryResults() {
                                 )}
                             </div>
 
-                            {/* --------------------------------------------------
-                                Source SQL
-                            -------------------------------------------------- */}
+                            {/* Source SQL */}
                             <div
                                 style={{
                                     marginBottom:
                                         "20px"
                                 }}
                             >
-                                <h3
-                                    style={{
-                                        marginBottom:
-                                            "8px"
-                                    }}
-                                >
+                                <h3>
                                     Source Extraction SQL
                                 </h3>
 
@@ -428,16 +529,9 @@ function QueryResults() {
                                 </pre>
                             </div>
 
-                            {/* --------------------------------------------------
-                                Target SQL
-                            -------------------------------------------------- */}
+                            {/* Target SQL */}
                             <div>
-                                <h3
-                                    style={{
-                                        marginBottom:
-                                            "8px"
-                                    }}
-                                >
+                                <h3>
                                     Target Insertion SQL
                                 </h3>
 
@@ -470,9 +564,10 @@ function QueryResults() {
                 }
             )}
 
-            {/* --------------------------------------------------
-                Error Message
-            -------------------------------------------------- */}
+            {/* ==================================================
+                ERROR
+            ================================================== */}
+
             {error && (
                 <div
                     style={{
@@ -490,14 +585,15 @@ function QueryResults() {
                 </div>
             )}
 
-            {/* --------------------------------------------------
-                Migration Status
-            -------------------------------------------------- */}
+            {/* ==================================================
+                MIGRATION LOG
+            ================================================== */}
+
             {migrationResults.length > 0 && (
                 <div
                     style={{
                         marginTop: "30px",
-                        padding: "20px",
+                        padding: "25px",
                         borderRadius: "10px",
                         border: "1px solid #ddd",
                         background: "#fafafa"
@@ -512,14 +608,55 @@ function QueryResults() {
                         Migration Status
                     </h2>
 
+                    {/* ------------------------------------------
+                        Migration Start
+                    ------------------------------------------ */}
+
+                    {migrationStartTime && (
+                        <div
+                            style={{
+                                padding: "15px",
+                                marginBottom: "10px",
+                                borderRadius: "8px",
+                                background:
+                                    "#eef2ff",
+                                border:
+                                    "1px solid #c7d2fe",
+                                color: "#3730a3"
+                            }}
+                        >
+                            <strong>
+                                Migration Started
+                            </strong>
+
+                            <div
+                                style={{
+                                    marginTop:
+                                        "5px"
+                                }}
+                            >
+                                Migration started on{" "}
+                                <strong>
+                                    {
+                                        migrationStartTime
+                                    }
+                                </strong>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ------------------------------------------
+                        Entity Results
+                    ------------------------------------------ */}
+
                     {migrationResults.map(
                         (result, index) => (
                             <div
                                 key={`${result.entity}-${index}`}
                                 style={{
-                                    padding: "15px",
+                                    padding: "18px",
                                     marginBottom:
-                                        "10px",
+                                        "12px",
                                     borderRadius:
                                         "8px",
                                     background:
@@ -536,39 +673,158 @@ function QueryResults() {
                                             : "1px solid #fecaca"
                                 }}
                             >
-                                <strong>
+                                {/* Entity Status */}
+                                <div
+                                    style={{
+                                        fontSize:
+                                            "16px",
+                                        fontWeight:
+                                            "600"
+                                    }}
+                                >
                                     {result.success
-                                        ? "✓ "
-                                        : "✗ "}
+                                        ? "✓"
+                                        : "✗"}{" "}
                                     {result.entity}
-                                </strong>
+                                </div>
 
+                                {/* Message */}
                                 <div
                                     style={{
                                         marginTop:
-                                            "5px"
+                                            "8px"
                                     }}
                                 >
+                                    <strong>
+                                        Status:
+                                    </strong>{" "}
+                                    {result.success
+                                        ? "Migration completed successfully."
+                                        : "Migration failed."}
+                                </div>
+
+                                {/* Extracted Rows */}
+                                <div
+                                    style={{
+                                        marginTop:
+                                            "6px"
+                                    }}
+                                >
+                                    <strong>
+                                        Records Extracted:
+                                    </strong>{" "}
                                     {
-                                        result.message
+                                        result.extractedRows
                                     }
                                 </div>
+
+                                {/* Inserted Rows */}
+                                <div
+                                    style={{
+                                        marginTop:
+                                            "4px"
+                                    }}
+                                >
+                                    <strong>
+                                        Records Inserted:
+                                    </strong>{" "}
+                                    {
+                                        result.insertedRows
+                                    }
+                                </div>
+
+                                {/* Migration Message */}
+<div
+    style={{
+        marginTop: "8px"
+    }}
+>
+    <strong>
+        Message:
+    </strong>{" "}
+    {result.message}
+</div>
+
+{/* Failure Reason */}
+{!result.success && (
+    <div
+        style={{
+            marginTop: "12px",
+            padding: "12px",
+            borderRadius: "6px",
+            background: "#fff",
+            border: "1px solid #fca5a5"
+        }}
+    >
+        <strong>
+            Failure Reason:
+        </strong>
+
+        <div
+            style={{
+                marginTop: "6px",
+                lineHeight: "1.5",
+                wordBreak: "break-word"
+            }}
+        >
+            {result.error ||
+                "No failure reason was returned by the ETL Agent."}
+        </div>
+    </div>
+)}
                             </div>
                         )
+                    )}
+
+                    {/* ------------------------------------------
+                        Migration End
+                    ------------------------------------------ */}
+
+                    {migrationEndTime && (
+                        <div
+                            style={{
+                                padding: "15px",
+                                marginTop: "10px",
+                                borderRadius: "8px",
+                                background:
+                                    "#f0fdf4",
+                                border:
+                                    "1px solid #bbf7d0",
+                                color: "#166534"
+                            }}
+                        >
+                            <strong>
+                                Migration Completed
+                            </strong>
+
+                            <div
+                                style={{
+                                    marginTop:
+                                        "5px"
+                                }}
+                            >
+                                Migration ended on{" "}
+                                <strong>
+                                    {
+                                        migrationEndTime
+                                    }
+                                </strong>
+                            </div>
+                        </div>
                     )}
                 </div>
             )}
 
-            {/* --------------------------------------------------
-                Start Migration Button
-            -------------------------------------------------- */}
+            {/* ==================================================
+                START MIGRATION
+            ================================================== */}
+
             <div
                 style={{
                     marginTop: "30px",
                     display: "flex",
                     justifyContent:
-                        "flex-end",
-                    gap: "15px"
+                        "flex-end"
                 }}
             >
                 <button
